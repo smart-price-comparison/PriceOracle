@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.env
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Database / Cache
+*.db
+*.sqlite
+*.log
+
+# Node / React
+node_modules/
+dist/
+build/
+
+# System files
+.DS_Store
+Thumbs.db

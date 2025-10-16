@@ -1,0 +1,22 @@
+name: priceoracle
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - python=3.11
+  - pip
+  - aiohttp                # Async HTTP requests
+  - beautifulsoup4         # HTML parsing
+  - lxml                   # Parser for BeautifulSoup
+  - requests               # For sync requests if needed
+  - flask                  # Optional: if you ever test with Flask
+  - pip:
+      - fastapi            # Backend framework
+      - uvicorn[standard]  # ASGI server for FastAPI
+      - motor              # Async MongoDB driver
+      - python-dotenv      # For .env file support
+      - pandas             # Optional: data handling/sorting
+      - tinydb             # Optional: local JSON-based cache
+      - fastapi-cache2     # Optional: caching support
+      - html5lib           # Backup HTML parser
