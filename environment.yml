@@ -6,17 +6,31 @@ channels:
 dependencies:
   - python=3.11
   - pip
-  - aiohttp                # Async HTTP requests
-  - beautifulsoup4         # HTML parsing
-  - lxml                   # Parser for BeautifulSoup
-  - requests               # For sync requests if needed
-  - flask                  # Optional: if you ever test with Flask
+  - aiohttp                 # Async HTTP requests
+  - beautifulsoup4          # HTML parsing
+  - lxml                    # Parser for BeautifulSoup
+  - requests                # Sync HTTP requests
+  - httpx                   # Async HTTP requests (modern)
+  - pydantic                # Data models for FastAPI
+  - redis                   # Optional caching backend
+  - fake-useragent          # For rotating user agents in scraping
+  - cloudscraper            # Helps bypass Cloudflare
+  - selectolax              # Fast HTML parser
+  - rich                    # Colored, beautiful terminal output
+  - loguru                  # Advanced logging
+  - black                   # Code formatter
+  - isort                   # Sort imports automatically
+  - pytest                  # Testing framework
+  - jinja2                  # Optional template engine for HTML
+  - flask                   # Optional (for testing)
   - pip:
-      - fastapi            # Backend framework
-      - uvicorn[standard]  # ASGI server for FastAPI
-      - motor              # Async MongoDB driver
-      - python-dotenv      # For .env file support
-      - pandas             # Optional: data handling/sorting
-      - tinydb             # Optional: local JSON-based cache
-      - fastapi-cache2     # Optional: caching support
-      - html5lib           # Backup HTML parser
+      - fastapi             # Backend framework
+      - uvicorn[standard]   # ASGI server for FastAPI
+      - motor               # Async MongoDB driver
+      - python-dotenv       # For .env configuration files
+      - pandas              # Optional for data manipulation
+      - tinydb              # Optional local JSON-based cache
+      - fastapi-cache2      # Caching layer
+      - html5lib            # Backup HTML parser
+      - fastapi-cors        # CORS middleware for frontend-backend link
+      
