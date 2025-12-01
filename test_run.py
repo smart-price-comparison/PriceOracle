@@ -50,15 +50,25 @@ async def main():
         for i, p in enumerate(my_results[:TOP_N], start=1):
             print_product(i, p)
         print(f"\n== Amazon results for: '{q}' ==\n")
+
         try:
-            am_results = await amazon_scraper(q)
+           am_results = await amazon_scraper(q)  # ✅ (CHANGE) call SerpAPI async scraper
         except Exception as e:
             print("Amazon scraper error:", e)
             am_results = []
+
         if not am_results:
             print("No Amazon results found.")
+
         for i, p in enumerate(am_results[:TOP_N], start=1):
-            print_product(i, p)
+            # ✅ (CHANGE) dict-safe print_product
+            name = p.get("name") or p.get("title") or "N/A"
+            price = str(p.get("price") or "N/A").replace("\u20b9", "Rs.")
+            pid = p.get("product_id")
+            url = p.get("url") or p.get("link") or "N/A"
+            img = p.get("image_url") or p.get("image") or "N/A"
+            print(f"{i}. {name[:120]} | price: {price} | id: {pid} | url: {url} | img: {bool(img)}")
+        # 🔥 END AMAZON CHANGE
         # optional: test amazon if available
         # print(f"\n== Amazon results for: '{q}' ==\n")
         # try:
