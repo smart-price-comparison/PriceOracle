@@ -1,9 +1,19 @@
-# filename: scraper.py
+# filename: backend/scraper/amazon_scraper.py
+import os
 import asyncio
-from serpapi import GoogleSearch
+import requests
 
-# Rename this to be the main function we call
+SERPAPI_BASE = "https://serpapi.com/search.json"
+
 async def amazon_scraper(query, pages=3):
+    """
+    Uses direct HTTP requests to SerpApi (no client library).
+    Returns list of product dicts like before.
+    """
+    api_key = os.getenv("SERPAPI_API_KEY")
+    if not api_key:
+        raise RuntimeError("SERPAPI_API_KEY environment variable is not set")
+
     all_products = []
 
     for page in range(1, pages + 1):
@@ -13,19 +23,21 @@ async def amazon_scraper(query, pages=3):
                 "amazon_domain": "amazon.in",
                 "k": query,
                 "page": page,
-                "api_key": "[REDACTED]" # Remember to replace this
+                "api_key": api_key
             }
+            # run blocking HTTP in thread to avoid blocking asyncio loop
+            def do_request():
+                r = requests.get(SERPAPI_BASE, params=params, timeout=30)
+                r.raise_for_status()
+                return r.json()
 
-            search = GoogleSearch(params)
-            
-            # Run the blocking search in a separate thread so it doesn't block the loop
-            results = await asyncio.to_thread(search.get_dict)
+            results = await asyncio.to_thread(do_request)
 
             if "error" in results:
                 print(f"Amazon page {page} error:", results["error"])
                 break
 
-            products = results.get("organic_results", [])
+            products = results.get("organic_results", []) or []
             if not products:
                 break
 
@@ -44,4 +56,3 @@ async def amazon_scraper(query, pages=3):
             continue
 
     return all_products
-
