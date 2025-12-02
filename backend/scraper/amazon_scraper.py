@@ -1,45 +1,54 @@
 from serpapi import GoogleSearch
 import asyncio
 
-async def amazon_scraper(query):
+async def amazon_scraper(query, pages=3):   # ⭐ CHANGE: Added page count
     try:
-        params = {
-            "engine": "amazon",
-            "amazon_domain": "amazon.in",
-            "k": query,               # ✅ use 'k', not 'keyword'
-            "api_key": "[REDACTED]"
-        }
-
-        # SerpAPI library is synchronous, so wrap in a thread executor
         loop = asyncio.get_event_loop()
-        results = await loop.run_in_executor(None, lambda: GoogleSearch(params).get_dict())
+        all_products = []
 
-        if "error" in results:
-            print("Error:", results["error"])
-            return []
+        for page in range(1, pages + 1):    # ⭐ CHANGE: Loop through pages
+            params = {
+                "engine": "amazon",
+                "amazon_domain": "amazon.in",
+                "k": query,
+                "page": page,               # ⭐ CHANGE: Enable pagination
+                "api_key": "[REDACTED]"
+            }
 
-        products = results.get("organic_results", [])
-        output = []
+            results = await loop.run_in_executor(
+                None,
+                lambda: GoogleSearch(params).get_dict()
+            )
 
-        for item in products:
-            output.append({
-                "name": item.get("title"),
-                "price": item.get("price"),
-                "image": item.get("thumbnail"),
-                "link": item.get("link")
-            })
+            if "error" in results:
+                print(f"Amazon page {page} error:", results["error"])
+                break
 
-        return output
+            products = results.get("organic_results", [])
+            if not products:
+                break
+
+            # ⭐ CHANGE: cleaner extraction
+            for item in products:
+                all_products.append({
+                    "name": item.get("title"),
+                    "price": item.get("price"),
+                    "image": item.get("thumbnail"),
+                    "link": item.get("link"),
+                    "rating": item.get("rating"),
+                    "reviews": item.get("reviews")
+                })
+
+        return all_products
 
     except Exception as e:
         print("Amazon scraper error:", e)
         return []
 
-# 🔥 Optional test
+# Test
 if __name__ == "__main__":
     data = asyncio.run(amazon_scraper("iphone 13"))
+    print(f"Total results: {len(data)}")
     for p in data:
         print(p)
-
-
 

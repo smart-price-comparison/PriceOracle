@@ -10,7 +10,7 @@ from backend.scraper.myntra_scraper import myntra_scraper
 # safe Amazon wrapper (sync) that returns [] on failure
 from backend.scraper.safe_amazon import search_amazon_safe
 
-QUERY = "nike shoes"
+QUERY = "face moisturizer"
 TOP_N = 5
 DEFAULT_TIMEOUT = 20
 
