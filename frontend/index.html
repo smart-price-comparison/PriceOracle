@@ -1,15 +1,26 @@
 <!DOCTYPE html>
 <html>
-    <title>Comparewise</title>
+<head>
+    <title>PriceOracle</title>
     <link rel="stylesheet" href="styles.css">
-    <body>
+</head>
+
+<body>
+    <div class="container">
+        
+        <img 
+            src="./assets/logopic.jpg" 
+            alt="Website logo" 
+            class="logo"
+        />
+
         <div class="search-container">
             <input type="text" id="searchInput" placeholder="Search products..." /><br>
             <button id="searchBtn">Search</button>
+            <div id="result" style="margin-top: 10px; color: white;"></div>
         </div>
-
-            
-        
-
-    </body>
+          
+    </div>
+    <script src="script.js"></script>
+</body>
 </html>
