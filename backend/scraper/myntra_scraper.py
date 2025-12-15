@@ -1,10 +1,6 @@
 # backend/scraper/myntra_scraper.py
 # Async-compatible Myntra scraper for use with your test_run.py
 #
-# Usage examples (matching your test_run.py):
-#   results = await myntra_scraper("nike shoes", session=aiohttp_session)
-#   results = await myntra_scraper(query="nike shoes")  # will fall back to Selenium
-#
 # Requirements:
 #   pip install aiohttp beautifulsoup4 selenium webdriver-manager
 
@@ -13,6 +9,7 @@ import asyncio
 import re
 from types import SimpleNamespace
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 # optional Selenium imports only used if we fall back
 try:
@@ -40,7 +37,6 @@ def _parse_price(text: Optional[str]) -> Optional[str]:
 
 
 def _make_obj_from_dict(d: dict) -> SimpleNamespace:
-    # ensure attribute-style access expected by print_product
     return SimpleNamespace(
         name=d.get("name"),
         title=d.get("name"),
@@ -55,10 +51,6 @@ def _make_obj_from_dict(d: dict) -> SimpleNamespace:
 
 
 async def _aiohttp_fetch_parse(url: str, session: aiohttp.ClientSession, product_card_selector: str = ".product-base", top_n: Optional[int] = None) -> List[SimpleNamespace]:
-    """
-    Try to fetch the search results page with aiohttp and parse product tiles.
-    Returns list of SimpleNamespace objects (may be empty if page rendered by JS).
-    """
     headers = {
         "User-Agent": DEFAULT_USER_AGENT,
         "Accept-Language": "en-IN,en;q=0.9",
@@ -67,12 +59,11 @@ async def _aiohttp_fetch_parse(url: str, session: aiohttp.ClientSession, product
         text = await resp.text()
     soup = BeautifulSoup(text, "html.parser")
 
-    # try several selectors (Myntra uses different classes across pages)
     selectors = [
         product_card_selector,
-        "li.product-grid__item",     # possible variations
+        "li.product-grid__item",
         ".product.product-base",
-        "li.search-result, li.product",  # generic fallbacks
+        "li.search-result, li.product",
         "a[href*='/product']"
     ]
 
@@ -85,27 +76,27 @@ async def _aiohttp_fetch_parse(url: str, session: aiohttp.ClientSession, product
     results = []
     seen = set()
     for card in cards[:top_n] if top_n else cards:
-        # anchor
         a = card.find("a", href=True)
         href = a["href"] if a else None
-        if href:
-            url_abs = href if href.startswith("http") else "https://www.myntra.com" + href
-        else:
-            url_abs = None
 
+        # ✅ Fix relative URL
+        url_abs = urljoin("https://www.myntra.com", href) if href else None
         if url_abs and url_abs in seen:
             continue
         if url_abs:
             seen.add(url_abs)
 
         img = card.find("img")
+        # ✅ Fix image extraction
+        image_url = None
+        if img:
+            image_url = img.get("src") or img.get("data-src") or img.get("data-srcset")
+
         name = img.get("alt") if img and img.get("alt") else (card.get_text(strip=True)[:200] or None)
-        image_url = img.get("src") if img and img.get("src") else img.get("data-src") if img and img.get("data-src") else None
 
         price_el = card.select_one(".product-discountedPrice, .product-price, .product-discountPrice")
         price = _parse_price(price_el.get_text()) if price_el else None
         if not price:
-            # fallback search for rupee symbol in text
             m = re.search(r'₹\s*[\d,]+|[\d,]{2,}', card.get_text(" "))
             price = _parse_price(m.group(0)) if m else None
 
@@ -124,14 +115,10 @@ async def _aiohttp_fetch_parse(url: str, session: aiohttp.ClientSession, product
 
 
 def _start_selenium_driver(headless: bool = True):
-    """
-    Create Selenium Chrome driver. Raises if webdriver not available.
-    """
     if webdriver is None:
         raise RuntimeError("Selenium is not installed or failed to import.")
     opts = Options()
     if headless:
-        # newer flag; if it errors, change to "--headless"
         opts.add_argument("--headless=new")
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
@@ -144,19 +131,14 @@ def _start_selenium_driver(headless: bool = True):
 
 
 def _selenium_scrape(url: str, headless: bool = True, wait: int = 3, product_card_selector: str = ".product-base", max_products: Optional[int] = None) -> List[SimpleNamespace]:
-    """
-    Synchronous Selenium scraper (runs in thread when called from async code).
-    """
     driver = _start_selenium_driver(headless=headless)
     try:
         driver.get(url)
-        # naive wait to let JS render; adjust externally if needed
         import time
         time.sleep(wait)
 
         cards = driver.find_elements(By.CSS_SELECTOR, product_card_selector) if hasattr(driver, "find_elements") else []
         if not cards:
-            # fallback xpath anchors
             cards = driver.find_elements(By.XPATH, "//a[contains(@href,'/product') or contains(@href,'-p-')]")
 
         results = []
@@ -171,16 +153,21 @@ def _selenium_scrape(url: str, headless: bool = True, wait: int = 3, product_car
             soup = BeautifulSoup(html, "html.parser")
             a = soup.find("a", href=True)
             href = a["href"] if a else None
-            product_url = href if href and href.startswith("http") else ("https://www.myntra.com" + href if href else None)
 
+            # ✅ Fix relative URL
+            product_url = urljoin("https://www.myntra.com", href) if href else None
             if product_url and product_url in seen:
                 continue
             if product_url:
                 seen.add(product_url)
 
             img = soup.find("img")
+            # ✅ Fix image
+            image_url = None
+            if img:
+                image_url = img.get("src") or img.get("data-src") or img.get("data-srcset")
+
             name = img.get("alt") if img and img.get("alt") else (soup.get_text(" ").strip()[:200] or None)
-            image_url = img.get("src") if img and img.get("src") else img.get("data-src") if img and img.get("data-src") else None
 
             price_el = soup.select_one(".product-discountedPrice, .product-price, .product-discountPrice")
             price = _parse_price(price_el.get_text()) if price_el else None
@@ -217,47 +204,30 @@ async def myntra_scraper(
     product_card_selector: str = ".product-base",
     max_products: Optional[int] = None,
 ) -> List[SimpleNamespace]:
-    """
-    Async wrapper expected by your test_run.py
-
-    - Provide either `query` (e.g. "nike shoes") or a full `url`.
-    - If `session` (aiohttp.ClientSession) is provided, the function first attempts
-      to fetch-and-parse with aiohttp (fast/no browser). If that returns no items,
-      it falls back to Selenium (browser).
-    - If no session provided, it will directly run Selenium in a background thread.
-    """
     if url is None and query is None:
         raise ValueError("Either 'query' or 'url' must be provided.")
 
     if url is None:
-        # construct simple Myntra search URL (matching how your test_run used query)
         from urllib.parse import quote_plus
         raw = quote_plus(query)
-        # myntra uses dash-separated path for search (e.g. myntra.com/nike-shoes)
         url = f"https://www.myntra.com/{raw.replace('+', '-')}" + f"?rawQuery={raw}"
 
     results = []
-    # Try aiohttp path if session provided
     if session is not None:
         try:
             results = await _aiohttp_fetch_parse(url, session=session, product_card_selector=product_card_selector, top_n=top_n)
         except Exception:
             results = []
         if results:
-            # honor max_products/top_n
             return results[:max_products] if max_products else results[:top_n]
 
-    # fallback to Selenium (run in thread so event loop not blocked)
     loop = asyncio.get_running_loop()
     try:
         scraped = await loop.run_in_executor(None, _selenium_scrape, url, headless, wait, product_card_selector, max_products or top_n)
         return scraped[:max_products] if max_products else scraped[:top_n]
-    except Exception as e:
-        # return empty list on failure (caller prints the error)
+    except Exception:
         return []
 
 
-# Backwards-compatible export: some code might import the sync function name
 def scrape_myntra_sync(*args, **kwargs):
-    # call Selenium sync scraper directly
     return _selenium_scrape(*args, **kwargs)
