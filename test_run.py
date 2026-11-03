@@ -1,7 +1,6 @@
 import asyncio
 import aiohttp
 import json
-from typing import Any
 
 # async scrapers (keep as-is)
 from backend.scraper.flipkart_scraper import flipkart_scraper
@@ -10,7 +9,7 @@ from backend.scraper.myntra_scraper import myntra_scraper
 # safe Amazon wrapper (sync) that returns [] on failure
 from backend.scraper.safe_amazon import search_amazon_safe
 
-QUERY = "face moisturizer"
+QUERY = "puma shoes"
 TOP_N = 5
 DEFAULT_TIMEOUT = 20
 
@@ -34,7 +33,7 @@ async def main():
         # FLIPKART
         print(f"\n== Flipkart results for: '{q}' ==\n")
         try:
-            fk_results = await flipkart_scraper(q, session=session)
+            fk_results = await flipkart_scraper(q)
         except Exception as e:
             print("Flipkart scraper error:", e)
             fk_results = []

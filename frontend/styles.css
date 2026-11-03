@@ -48,5 +48,26 @@ body {
     margin-left: auto;    /* center horizontally */
     margin-right: auto;
 }
+.result-card {
+    background: #1e1e1e;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 10px;
+    text-align: center;
+}
 
+.result-card img {
+    width: 120px;
+    height: auto;
+    margin: 10px 0;
+}
 
+.result-card a {
+    color: #00ffcc;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.result-card h3 {
+    color: #fff;
+}

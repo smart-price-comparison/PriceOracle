@@ -1,0 +1,11 @@
+aiohttp
+beautifulsoup4
+fastapi
+Flask
+Flask-Cors
+google-search-results
+python-dotenv
+requests
+selenium
+uvicorn[standard]
+webdriver-manager

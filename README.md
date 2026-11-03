@@ -44,3 +44,20 @@ Users enter a product name, and the app fetches data from these platforms using 
    ```bash
    git clone https://github.com/Smart-Price-Comparison/PriceOracle.git
    cd PriceOracle
+   ```
+
+2. **Install dependencies**
+   ```bash
+   python -m pip install -r requirements.txt
+   ```
+
+3. **Configure SerpApi**
+   Copy `.env.example` to `.env` and set your `SERPAPI_API_KEY`. The `.env` file
+   is ignored by Git; do not commit credentials.
+
+4. **Run the Flask scraper API**
+   ```bash
+   python -m backend.scraper.app
+   ```
+
+   Or run the FastAPI application with `uvicorn backend.main:app --reload`.
